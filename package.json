@@ -1,0 +1,20 @@
+{
+  "name": "cf-llmtxt",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker + R2 + Workers AI automatic and manual /llm.txt & /llms.txt generator with Dashboard",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "node scripts/dev-server.mjs",
+    "dev:wrangler": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/smoke-test.mjs"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250214.0",
+    "typescript": "^5.7.3",
+    "wrangler": "^3.109.0"
+  }
+}
