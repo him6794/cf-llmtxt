@@ -11,7 +11,7 @@
 3. **SSR 與 SPA 雙引擎爬取**：
    - 靜態網頁與 SSR 網站使用 Cloudflare 原生 `HTMLRewriter` 串流解析 HTML 與 `/sitemap.xml`。
    - 針對 `<div id="root">` 等純前端 SPA（Vite、Create React App、Webpack），內建原生 JS Bundle 與同源 JSON API 深度提取器，亦可選配 Cloudflare Browser Rendering API 或 `r.jina.ai` 備援。
-4. **定時自動更新（Cron）**：每小時（`0 * * * *`）檢查已過期的網域並重新爬取；透過內容 SHA-256（`contentHash`）比對，若網頁內容與 Prompt 皆未變動則直接沿用既有快取，不重跑 Workers AI。
+4. **定時自動更新（Cron）**：每小時（`0 * * * *`）檢查已過期的網域並重新爬取；透過內容 SHA-256（`contentHash`）比對，若網頁內容與 Prompt 皆未變動則直接沿用既有快取，不重跑 Workers AI。更新失敗時保留既有快取，後續 Cron 會再次嘗試；每次最多處理兩個網域，優先處理最久未嘗試更新的網域，避免持續失敗的網站阻塞其他網域。
 
 ---
 
@@ -95,6 +95,7 @@ routes = [
 | `src/types.ts` | TypeScript 介面與型別定義 |
 | `scripts/dev-server.mjs` | 本機開發伺服器，先以 `wrangler deploy --dry-run` 打包後，在 Node.js 中搭配檔案系統模擬的 `LocalR2Bucket`（`.r2-local/`）執行 |
 | `scripts/smoke-test.mjs` | 端到端功能與資安測試套件（79 項檢查） |
+| `scripts/refresh-test.mjs` | 使用模擬網站與記憶體 R2 驗證 Cron 失敗重試、快取保留與排程公平性，無需外部網站或 Cloudflare 帳號 |
 | `scripts/setup.mjs` | CLI 互動式安裝與部署腳本 |
 
 ### 本機開發
@@ -117,7 +118,9 @@ npm run typecheck
 npm test
 ```
 
-`npm test` 會在 `127.0.0.1:3466` 啟動獨立的測試伺服器與乾淨的 `.r2-local`，自動驗證：
+`npm test` 會先執行 Cron 回歸測試（也可單獨執行 `npm run test:refresh`），驗證暫時性錯誤後的自動恢復、失敗時保留快取、每次最多更新兩個網域，以及失敗網域不會阻塞其他過期網域。
+
+接著執行端到端測試（`npm run test:smoke`），在 `127.0.0.1:3466` 啟動獨立的測試伺服器與乾淨的 `.r2-local`，自動驗證：
 - Dashboard CSP、`X-Frame-Options`、`X-Content-Type-Options` 與內嵌 Script 語法
 - 首次設定前的 API 封鎖與原子寫入（防止並發搶註密碼）
 - PBKDF2 雜湊儲存、舊版 SHA-256 密碼自動升級、Session Cookie 簽章與過期驗證

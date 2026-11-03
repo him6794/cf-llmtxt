@@ -26,6 +26,7 @@ export interface DomainEntry {
   renderMode: RenderMode;
   status: 'cached' | 'uncached' | 'generating' | 'error';
   lastUpdated?: string;
+  lastAttemptedAt?: string;
   pageCount?: number;
   usedAI?: boolean;
   detectedSpa?: boolean;
