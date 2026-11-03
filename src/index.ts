@@ -125,8 +125,16 @@ async function refreshDueDomains(env: Env): Promise<void> {
   if (!hours || hours <= 0) return;
   const cutoff = Date.now() - hours * 3600 * 1000;
   const due = Object.values(config.domains)
-    .filter((d) => d.enabled && d.status === 'cached' && d.lastUpdated && Date.parse(d.lastUpdated) < cutoff)
-    .sort((a, b) => Date.parse(a.lastUpdated!) - Date.parse(b.lastUpdated!))
+    .filter((d) =>
+      d.enabled &&
+      (d.status === 'cached' || d.status === 'error') &&
+      d.lastUpdated &&
+      Date.parse(d.lastUpdated) < cutoff
+    )
+    // A failed origin stays eligible, but must not monopolize the refresh budget.
+    .sort((a, b) =>
+      Date.parse(a.lastAttemptedAt || a.lastUpdated!) - Date.parse(b.lastAttemptedAt || b.lastUpdated!)
+    )
     .slice(0, REFRESH_PER_RUN);
   for (const d of due) {
     try {

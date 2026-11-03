@@ -256,6 +256,7 @@ export async function generateAndStoreLlmsTxt(
   const entry = await ensureDomainEntry(env, config, cleanHost);
 
   entry.status = 'generating';
+  entry.lastAttemptedAt = new Date().toISOString();
   entry.lastError = undefined;
   await saveSystemConfig(env, config, config);
 
